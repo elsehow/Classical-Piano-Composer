@@ -10,7 +10,8 @@ from utils import create_network
 
 def train_network():
     """ Train a Neural Network to generate music """
-    notes = get_notes()
+    with open('data/notes', 'rb') as filepath:
+        notes = pickle.load(filepath)
 
     # get amount of pitch names
     n_vocab = len(set(notes))
