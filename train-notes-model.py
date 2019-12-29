@@ -5,4 +5,4 @@ if __name__ == '__main__':
     """ Train a Neural Network to generate music """
     with open('data/notes', 'rb') as filepath:
         notes = pickle.load(filepath)
-    train_network(notes)
+    train_network(notes, 'weights-notes.hdf5')

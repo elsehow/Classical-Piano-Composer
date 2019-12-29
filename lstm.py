@@ -1,7 +1,5 @@
 """ This module prepares midi file data and feeds it to the neural
     network for training """
-import glob
-import pickle
 import numpy
 from music21 import converter, instrument, note, chord
 from keras.utils import np_utils
@@ -12,6 +10,16 @@ from keras.layers import Dropout
 from keras.layers import LSTM
 from keras.layers import BatchNormalization as BatchNorm
 from keras.layers import Activation
+
+def train_network(items, filepath):
+    # get number of unique items
+    n_vocab = len(set(items))
+
+    network_input, network_output = prepare_sequences(items, n_vocab)
+
+    model = create_network(network_input, n_vocab)
+
+    train(model, network_input, network_output, filepath)
 
 def create_network(network_input, n_vocab):
     """ create the structure of the neural network """
@@ -36,25 +44,14 @@ def create_network(network_input, n_vocab):
 
     return model
 
-def train_network(items):
-    # get amount of pitch names
-    n_vocab = len(set(items))
-
-    network_input, network_output = prepare_sequences(items, n_vocab)
-
-    model = create_network(network_input, n_vocab)
-
-    train(model, network_input, network_output)
-
 def prepare_sequences(items, n_vocab):
     """ Prepare the sequences used by the Neural Network """
     sequence_length = 100
 
-    # get all pitch names
-    pitchnames = sorted(set(item for item in items))
-
-     # create a dictionary to map pitches to integers
-    note_to_int = dict((note, number) for number, note in enumerate(pitchnames))
+     # create a dictionary to map items to integers
+     # (we're treating this as categorical data, remember)
+    item_names = sorted(set(item for item in items))
+    item_to_int = dict((item, number) for number, item in enumerate(item_names))
 
     network_input = []
     network_output = []
@@ -63,8 +60,8 @@ def prepare_sequences(items, n_vocab):
     for i in range(0, len(items) - sequence_length, 1):
         sequence_in = items[i:i + sequence_length]
         sequence_out = items[i + sequence_length]
-        network_input.append([note_to_int[char] for char in sequence_in])
-        network_output.append(note_to_int[sequence_out])
+        network_input.append([item_to_int[char] for char in sequence_in])
+        network_output.append(item_to_int[sequence_out])
 
     n_patterns = len(network_input)
 
@@ -78,9 +75,8 @@ def prepare_sequences(items, n_vocab):
     return (network_input, network_output)
 
 
-def train(model, network_input, network_output):
+def train(model, network_input, network_output, filepath):
     """ train the neural network """
-    filepath = "weights-improvement-{epoch:02d}-{loss:.4f}-bigger.hdf5"
     checkpoint = ModelCheckpoint(
         filepath,
         monitor='loss',
@@ -91,9 +87,3 @@ def train(model, network_input, network_output):
     callbacks_list = [checkpoint]
 
     model.fit(network_input, network_output, epochs=200, batch_size=128, callbacks=callbacks_list)
-
-if __name__ == '__main__':
-    """ Train a Neural Network to generate music """
-    with open('data/notes', 'rb') as filepath:
-        notes = pickle.load(filepath)
-    train_network(notes)
