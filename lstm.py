@@ -6,28 +6,52 @@ import numpy
 from music21 import converter, instrument, note, chord
 from keras.utils import np_utils
 from keras.callbacks import ModelCheckpoint
-from utils import create_network
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.layers import LSTM
+from keras.layers import BatchNormalization as BatchNorm
+from keras.layers import Activation
 
-def train_network():
-    """ Train a Neural Network to generate music """
-    with open('data/notes', 'rb') as filepath:
-        notes = pickle.load(filepath)
+def create_network(network_input, n_vocab):
+    """ create the structure of the neural network """
+    model = Sequential()
+    model.add(LSTM(
+        512,
+        input_shape=(network_input.shape[1], network_input.shape[2]),
+        recurrent_dropout=0.3,
+        return_sequences=True
+    ))
+    model.add(LSTM(512, return_sequences=True, recurrent_dropout=0.3,))
+    model.add(LSTM(512))
+    model.add(BatchNorm())
+    model.add(Dropout(0.3))
+    model.add(Dense(256))
+    model.add(Activation('relu'))
+    model.add(BatchNorm())
+    model.add(Dropout(0.3))
+    model.add(Dense(n_vocab))
+    model.add(Activation('softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
 
+    return model
+
+def train_network(items):
     # get amount of pitch names
-    n_vocab = len(set(notes))
+    n_vocab = len(set(items))
 
-    network_input, network_output = prepare_sequences(notes, n_vocab)
+    network_input, network_output = prepare_sequences(items, n_vocab)
 
     model = create_network(network_input, n_vocab)
 
     train(model, network_input, network_output)
 
-def prepare_sequences(notes, n_vocab):
+def prepare_sequences(items, n_vocab):
     """ Prepare the sequences used by the Neural Network """
     sequence_length = 100
 
     # get all pitch names
-    pitchnames = sorted(set(item for item in notes))
+    pitchnames = sorted(set(item for item in items))
 
      # create a dictionary to map pitches to integers
     note_to_int = dict((note, number) for number, note in enumerate(pitchnames))
@@ -36,9 +60,9 @@ def prepare_sequences(notes, n_vocab):
     network_output = []
 
     # create input sequences and the corresponding outputs
-    for i in range(0, len(notes) - sequence_length, 1):
-        sequence_in = notes[i:i + sequence_length]
-        sequence_out = notes[i + sequence_length]
+    for i in range(0, len(items) - sequence_length, 1):
+        sequence_in = items[i:i + sequence_length]
+        sequence_out = items[i + sequence_length]
         network_input.append([note_to_int[char] for char in sequence_in])
         network_output.append(note_to_int[sequence_out])
 
@@ -69,4 +93,7 @@ def train(model, network_input, network_output):
     model.fit(network_input, network_output, epochs=200, batch_size=128, callbacks=callbacks_list)
 
 if __name__ == '__main__':
-    train_network()
+    """ Train a Neural Network to generate music """
+    with open('data/notes', 'rb') as filepath:
+        notes = pickle.load(filepath)
+    train_network(notes)

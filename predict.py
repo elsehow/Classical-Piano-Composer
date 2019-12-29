@@ -3,7 +3,7 @@
 import pickle
 import numpy
 from music21 import instrument, note, stream, chord
-from utils import create_network
+from lstm import create_network
 
 def generate():
     """ Generate a piano midi file """
