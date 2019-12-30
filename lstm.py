@@ -15,18 +15,10 @@ from keras.layers import Activation
 def vocab_size (items):
     return len(set(items))
 
+
 def get_item_names (items):
     return  sorted(set(item for item in items))
 
-def train_network(items, filepath):
-    # get number of unique items
-    n_vocab = vocab_size(items)
-
-    network_input, network_output = prepare_sequences(items, n_vocab)
-
-    model = create_network(network_input, n_vocab)
-
-    train(model, network_input, network_output, filepath)
 
 def create_network(network_input, n_vocab):
     """ create the structure of the neural network """
@@ -51,9 +43,9 @@ def create_network(network_input, n_vocab):
 
     return model
 
-def prepare_sequences(items, n_vocab):
+
+def prepare_sequences(items, n_vocab, sequence_length=100):
     """ Prepare the sequences used by the Neural Network """
-    sequence_length = 100
 
      # create a dictionary to map items to integers
      # (we're treating this as categorical data, remember)
@@ -73,13 +65,23 @@ def prepare_sequences(items, n_vocab):
     n_patterns = len(network_input)
 
     # reshape the input into a format compatible with LSTM layers
-    network_input = numpy.reshape(network_input, (n_patterns, sequence_length, 1))
+    normalized_input = numpy.reshape(network_input, (n_patterns, sequence_length, 1))
     # normalize input
-    network_input = network_input / float(n_vocab)
+    normalized_input = normalized_input / float(n_vocab)
 
+    return (normalized_input, network_output, network_input)
+
+
+def train_network(items, filepath):
+    # get number of unique items
+    n_vocab = vocab_size(items)
+
+    normalized_input, network_output, network_input = prepare_sequences(items, n_vocab)
     network_output = np_utils.to_categorical(network_output)
 
-    return (network_input, network_output)
+    model = create_network(normalized_input, n_vocab)
+
+    train(model, normalized_input, network_output, filepath)
 
 
 def train(model, network_input, network_output, filepath):

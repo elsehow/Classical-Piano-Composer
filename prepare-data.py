@@ -35,10 +35,10 @@ if __name__ == '__main__':
                 notes.append(chrd)
                 append_duration(element)
 
-    # with open('data/notes', 'wb') as filepath:
-    #     pickle.dump(notes, filepath)
-    # print('wrote data/notes')
+    with open('data/notes', 'wb') as filepath:
+        pickle.dump(notes, filepath)
+    print('wrote data/notes')
 
-    # with open('data/durations', 'wb') as filepath:
-    #     pickle.dump(durations, filepath)
-    # print('wrote data/durations')
+    with open('data/durations', 'wb') as filepath:
+        pickle.dump(durations, filepath)
+    print('wrote data/durations')
