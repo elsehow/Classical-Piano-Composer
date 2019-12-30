@@ -11,9 +11,16 @@ from keras.layers import LSTM
 from keras.layers import BatchNormalization as BatchNorm
 from keras.layers import Activation
 
+
+def vocab_size (items):
+    return len(set(items))
+
+def get_item_names (items):
+    return  sorted(set(item for item in items))
+
 def train_network(items, filepath):
     # get number of unique items
-    n_vocab = len(set(items))
+    n_vocab = vocab_size(items)
 
     network_input, network_output = prepare_sequences(items, n_vocab)
 
@@ -50,7 +57,7 @@ def prepare_sequences(items, n_vocab):
 
      # create a dictionary to map items to integers
      # (we're treating this as categorical data, remember)
-    item_names = sorted(set(item for item in items))
+    item_names = get_item_names(items)
     item_to_int = dict((item, number) for number, item in enumerate(item_names))
 
     network_input = []
